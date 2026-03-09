@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Craft Reply Settings</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Craft Reply</h1>
+    <p class="subtitle">AI-powered replies for X</p>
+
+    <div class="section">
+      <label class="label">AI Provider</label>
+      <div class="toggle-group">
+        <button class="toggle-btn active" data-provider="claude">Claude</button>
+        <button class="toggle-btn" data-provider="openai">OpenAI</button>
+      </div>
+    </div>
+
+    <div class="section" id="claude-settings">
+      <label class="label" for="claude-key">Claude API Key</label>
+      <input type="password" id="claude-key" placeholder="sk-ant-..." autocomplete="off">
+      <label class="label" for="claude-model">Model</label>
+      <select id="claude-model">
+        <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+        <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
+        <option value="claude-opus-4-6">Claude Opus 4.6</option>
+      </select>
+    </div>
+
+    <div class="section hidden" id="openai-settings">
+      <label class="label" for="openai-key">OpenAI API Key</label>
+      <input type="password" id="openai-key" placeholder="sk-..." autocomplete="off">
+      <label class="label" for="openai-model">Model</label>
+      <select id="openai-model">
+        <option value="gpt-4o">GPT-4o</option>
+        <option value="gpt-4o-mini">GPT-4o Mini</option>
+        <option value="gpt-4-turbo">GPT-4 Turbo</option>
+      </select>
+    </div>
+
+    <div class="section">
+      <label class="label" for="default-tone">Default Tone</label>
+      <select id="default-tone">
+        <option value="witty">Witty</option>
+        <option value="supportive">Supportive</option>
+        <option value="contrarian">Contrarian</option>
+        <option value="informative">Informative</option>
+        <option value="provocative">Provocative</option>
+        <option value="analytical">Analytical</option>
+      </select>
+    </div>
+
+    <div class="section">
+      <label class="label">Research (Optional)</label>
+      <div class="checkbox-row">
+        <input type="checkbox" id="research-enabled">
+        <label for="research-enabled">Enable topic research via Twitter API</label>
+      </div>
+      <div id="research-settings" class="hidden">
+        <label class="label" for="twitter-token">Twitter Bearer Token</label>
+        <input type="password" id="twitter-token" placeholder="Bearer token..." autocomplete="off">
+      </div>
+    </div>
+
+    <button id="save-btn" class="save-btn">Save Settings</button>
+    <div id="status" class="status"></div>
+  </div>
+
+  <script src="../lib/storage.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
