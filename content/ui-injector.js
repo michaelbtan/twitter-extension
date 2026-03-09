@@ -99,6 +99,61 @@ const UIInjector = {
     setTimeout(() => toast.classList.remove('visible'), 4000);
   },
 
+  showContextPopover(container, onSubmit) {
+    // Close any existing popover
+    const existing = container.querySelector('.craft-reply-popover');
+    if (existing) {
+      existing.remove();
+      return;
+    }
+
+    const popover = document.createElement('div');
+    popover.className = 'craft-reply-popover';
+
+    const textarea = document.createElement('textarea');
+    textarea.placeholder = 'Add context (optional)...';
+    textarea.rows = 3;
+
+    const generateBtn = document.createElement('button');
+    generateBtn.className = 'craft-reply-popover-generate';
+    generateBtn.textContent = 'Generate';
+
+    popover.appendChild(textarea);
+    popover.appendChild(generateBtn);
+    container.appendChild(popover);
+
+    textarea.focus();
+
+    function submit() {
+      const text = textarea.value.trim();
+      popover.remove();
+      onSubmit(text);
+    }
+
+    generateBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      submit();
+    });
+
+    textarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submit();
+      }
+    });
+
+    // Dismiss on outside click (next tick to avoid immediate dismiss)
+    setTimeout(() => {
+      const dismiss = (e) => {
+        if (!popover.contains(e.target)) {
+          popover.remove();
+          document.removeEventListener('click', dismiss, true);
+        }
+      };
+      document.addEventListener('click', dismiss, true);
+    }, 0);
+  },
+
   getToneLabel(value) {
     const tone = TONES.find((t) => t.value === value);
     return tone ? tone.label : 'Witty';

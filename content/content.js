@@ -30,43 +30,47 @@
 
     const { btn, toneBtn } = result;
 
-    btn.addEventListener('click', async (e) => {
+    btn.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
       console.log('[CraftReply] Button clicked');
 
-      const tweetData = TweetParser.parse(tweetElement);
-      console.log('[CraftReply] Tweet data:', tweetData);
-      if (!tweetData.text) {
-        UIInjector.showError(tweetElement, 'Could not read tweet text');
-        return;
-      }
-
-      const tone = toneBtn.dataset.tone || defaultTone;
-
-      UIInjector.setLoading(btn, true);
-
-      try {
-        console.log('[CraftReply] Sending message to service worker...');
-        const response = await sendMessageWithTimeout({
-          type: 'CRAFT_REPLY',
-          tweetContext: tweetData,
-          tone: tone,
-        });
-        console.log('[CraftReply] Response:', response);
-
-        if (response.error) {
-          UIInjector.showError(tweetElement, response.error);
+      const container = btn.closest('.craft-reply-container');
+      UIInjector.showContextPopover(container, async (contextText) => {
+        const tweetData = TweetParser.parse(tweetElement);
+        console.log('[CraftReply] Tweet data:', tweetData);
+        if (!tweetData.text) {
+          UIInjector.showError(tweetElement, 'Could not read tweet text');
           return;
         }
 
-        await ReplyInserter.insert(tweetElement, response.reply);
-      } catch (err) {
-        console.error('[CraftReply] Error:', err);
-        UIInjector.showError(tweetElement, err.message || 'Failed to craft reply');
-      } finally {
-        UIInjector.setLoading(btn, false);
-      }
+        const tone = toneBtn.dataset.tone || defaultTone;
+
+        UIInjector.setLoading(btn, true);
+
+        try {
+          console.log('[CraftReply] Sending message to service worker...');
+          const response = await sendMessageWithTimeout({
+            type: 'CRAFT_REPLY',
+            tweetContext: tweetData,
+            tone: tone,
+            userContext: contextText,
+          });
+          console.log('[CraftReply] Response:', response);
+
+          if (response.error) {
+            UIInjector.showError(tweetElement, response.error);
+            return;
+          }
+
+          await ReplyInserter.insert(tweetElement, response.reply);
+        } catch (err) {
+          console.error('[CraftReply] Error:', err);
+          UIInjector.showError(tweetElement, err.message || 'Failed to craft reply');
+        } finally {
+          UIInjector.setLoading(btn, false);
+        }
+      });
     });
   }
 

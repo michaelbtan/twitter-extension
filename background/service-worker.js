@@ -92,7 +92,7 @@ const TONE_INSTRUCTIONS = {
   analytical: `You break down the topic with structured thinking. Identify patterns, implications, or overlooked angles. Be precise but not dry. Think strategic consultant in 280 characters. Avoid jargon or unnecessary complexity.`,
 };
 
-function buildPrompt(tweetContext, tone, researchContext) {
+function buildPrompt(tweetContext, tone, researchContext, userContext) {
   const systemPrompt = `You are a social media engagement expert who writes authentic, high-quality replies on X/Twitter.
 
 RULES — follow these strictly:
@@ -123,6 +123,10 @@ Tweet: "${tweetContext.text}"`;
     researchContext.forEach((item) => {
       userPrompt += `\n- ${item}`;
     });
+  }
+
+  if (userContext) {
+    userPrompt += `\n\nAdditional context from user: ${userContext}`;
   }
 
   return { systemPrompt, userPrompt };
@@ -216,7 +220,8 @@ async function handleCraftReply(message) {
   const { systemPrompt, userPrompt } = buildPrompt(
     message.tweetContext,
     message.tone,
-    researchContext
+    researchContext,
+    message.userContext
   );
 
   const reply = await callAI(userPrompt, systemPrompt, settings);
