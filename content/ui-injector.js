@@ -101,7 +101,7 @@ const UIInjector = {
 
   showContextPopover(container, onSubmit) {
     // Close any existing popover
-    const existing = container.querySelector('.craft-reply-popover');
+    const existing = document.querySelector('.craft-reply-popover');
     if (existing) {
       existing.remove();
       return;
@@ -120,7 +120,27 @@ const UIInjector = {
 
     popover.appendChild(textarea);
     popover.appendChild(generateBtn);
-    container.appendChild(popover);
+    document.body.appendChild(popover);
+
+    // Position popover above the Craft Reply button
+    const rect = container.getBoundingClientRect();
+    const popoverWidth = 280;
+    let left = rect.left + rect.width / 2 - popoverWidth / 2;
+    // Clamp horizontally to viewport
+    if (left + popoverWidth > window.innerWidth - 12) {
+      left = window.innerWidth - popoverWidth - 12;
+    }
+    if (left < 12) left = 12;
+    popover.style.left = left + 'px';
+
+    // Measure height after appending, then place above
+    const popoverHeight = popover.offsetHeight;
+    let top = rect.top - popoverHeight - 6;
+    // If it would go above the viewport, show below instead
+    if (top < 8) {
+      top = rect.bottom + 6;
+    }
+    popover.style.top = top + 'px';
 
     textarea.focus();
 
@@ -152,6 +172,112 @@ const UIInjector = {
       };
       document.addEventListener('click', dismiss, true);
     }, 0);
+  },
+
+  showReplySelector(container, replies, onSelect) {
+    // Remove any existing selector
+    const existing = document.querySelector('.craft-reply-selector');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'craft-reply-selector-overlay';
+
+    const panel = document.createElement('div');
+    panel.className = 'craft-reply-selector';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'craft-reply-selector-header';
+    const title = document.createElement('span');
+    title.textContent = 'Choose a reply';
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'craft-reply-selector-close';
+    closeBtn.innerHTML = '&times;';
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+    panel.appendChild(header);
+
+    // Reply options
+    const list = document.createElement('div');
+    list.className = 'craft-reply-selector-list';
+
+    replies.forEach((text, i) => {
+      const card = document.createElement('div');
+      card.className = 'craft-reply-selector-option';
+
+      const replyText = document.createElement('div');
+      replyText.className = 'craft-reply-selector-text';
+      replyText.textContent = text;
+
+      const meta = document.createElement('div');
+      meta.className = 'craft-reply-selector-meta';
+      const charCount = document.createElement('span');
+      charCount.className = 'craft-reply-selector-chars';
+      if (text.length > 280) charCount.classList.add('over-limit');
+      charCount.textContent = `${text.length}/280`;
+      const label = document.createElement('span');
+      label.className = 'craft-reply-selector-label';
+      label.textContent = `Option ${i + 1}`;
+      meta.appendChild(label);
+      meta.appendChild(charCount);
+
+      card.appendChild(replyText);
+      card.appendChild(meta);
+
+      card.addEventListener('click', () => {
+        card.classList.add('selected');
+        setTimeout(() => {
+          cleanup();
+          onSelect(text);
+        }, 200);
+      });
+
+      list.appendChild(card);
+    });
+
+    panel.appendChild(list);
+
+    // Position near the button
+    const rect = container.getBoundingClientRect();
+    let top = rect.top - 8;
+    let left = rect.left;
+
+    // Clamp to viewport
+    const panelWidth = 340;
+    if (left + panelWidth > window.innerWidth - 16) {
+      left = window.innerWidth - panelWidth - 16;
+    }
+    if (left < 16) left = 16;
+
+    panel.style.top = `${Math.max(16, top)}px`;
+    panel.style.left = `${left}px`;
+    // Adjust after render if it goes below viewport
+    requestAnimationFrame(() => {
+      const panelRect = panel.getBoundingClientRect();
+      if (panelRect.bottom > window.innerHeight - 16) {
+        panel.style.top = `${window.innerHeight - panelRect.height - 16}px`;
+      }
+      if (panelRect.top < 16) {
+        panel.style.top = '16px';
+      }
+    });
+
+    function cleanup() {
+      overlay.remove();
+      panel.remove();
+    }
+
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      cleanup();
+    });
+
+    overlay.addEventListener('click', () => {
+      cleanup();
+    });
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(panel);
   },
 
   getToneLabel(value) {

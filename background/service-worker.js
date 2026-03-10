@@ -34,7 +34,7 @@ async function callClaudeAPI(prompt, systemPrompt, settings) {
     },
     body: JSON.stringify({
       model: settings.claudeModel,
-      max_tokens: 280,
+      max_tokens: 1024,
       system: systemPrompt,
       messages: [{ role: 'user', content: prompt }],
     }),
@@ -58,7 +58,7 @@ async function callOpenAIAPI(prompt, systemPrompt, settings) {
     },
     body: JSON.stringify({
       model: settings.openaiModel,
-      max_tokens: 280,
+      max_tokens: 1024,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: prompt },
@@ -96,14 +96,16 @@ function buildPrompt(tweetContext, tone, researchContext, userContext) {
   const systemPrompt = `You are a social media engagement expert who writes authentic, high-quality replies on X/Twitter.
 
 RULES — follow these strictly:
-- Output ONLY the reply text. No quotes, no labels, no explanation.
-- Must be under 280 characters.
+- Output EXACTLY 3 distinct reply options as a JSON array of strings: ["reply1", "reply2", "reply3"]
+- Each reply must be under 280 characters.
+- Each reply should use a different angle or structure.
 - Never use hashtags.
 - Never start with "I" as the first word.
 - No corporate-speak, buzzwords, or marketing language.
 - No sycophantic openers like "Great point!" or "Love this!"
 - Sound like a real, thoughtful human — not a bot or brand account.
 - Match the energy and register of the original tweet.
+- Output ONLY the JSON array. No other text, no explanation, no markdown fences.
 
 TONE: ${TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.witty}`;
 
@@ -224,8 +226,25 @@ async function handleCraftReply(message) {
     message.userContext
   );
 
-  const reply = await callAI(userPrompt, systemPrompt, settings);
-  const cleaned = reply.replace(/^["']|["']$/g, '').trim();
+  const raw = await callAI(userPrompt, systemPrompt, settings);
 
-  return { reply: cleaned };
+  let replies;
+  try {
+    // Strip markdown code fences if present
+    const cleaned = raw.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?\s*```$/i, '').trim();
+    const parsed = JSON.parse(cleaned);
+    if (Array.isArray(parsed)) {
+      replies = parsed.map((r) => String(r).replace(/^["']|["']$/g, '').trim()).filter(Boolean).slice(0, 3);
+    }
+  } catch {
+    // JSON parse failed
+  }
+
+  // Fallback: wrap raw text as single reply
+  if (!replies || replies.length === 0) {
+    const fallback = raw.replace(/^["']|["']$/g, '').trim();
+    replies = [fallback];
+  }
+
+  return { replies };
 }

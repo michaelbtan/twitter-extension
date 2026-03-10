@@ -63,7 +63,14 @@
             return;
           }
 
-          await ReplyInserter.insert(tweetElement, response.reply);
+          const replies = response.replies || [response.reply];
+          if (replies.length > 1) {
+            UIInjector.showReplySelector(container, replies, async (chosen) => {
+              await ReplyInserter.insert(tweetElement, chosen);
+            });
+          } else {
+            await ReplyInserter.insert(tweetElement, replies[0]);
+          }
         } catch (err) {
           console.error('[CraftReply] Error:', err);
           UIInjector.showError(tweetElement, err.message || 'Failed to craft reply');
