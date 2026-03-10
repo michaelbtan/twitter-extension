@@ -12,7 +12,7 @@ const Storage = {
       claudeApiKey: '',
       openaiApiKey: '',
       claudeModel: 'claude-sonnet-4-6',
-      openaiModel: 'gpt-4o',
+      openaiModel: 'gpt-5.4',
       defaultTone: 'witty',
       twitterBearerToken: '',
       researchEnabled: false,
