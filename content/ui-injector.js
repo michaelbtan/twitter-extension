@@ -5,6 +5,9 @@ const TONES = [
   { value: 'informative', label: 'Informative' },
   { value: 'provocative', label: 'Provocative' },
   { value: 'analytical', label: 'Analytical' },
+  { value: 'question', label: 'Question' },
+  { value: 'agreeable', label: 'Agreeable' },
+  { value: 'disagreeable', label: 'Disagreeable' },
 ];
 
 const UIInjector = {
@@ -23,7 +26,7 @@ const UIInjector = {
       <svg viewBox="0 0 24 24" width="18" height="18" class="craft-reply-icon">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15l-1-1 4-4-4-4 1-1 5 5-5 5z" fill="currentColor"/>
       </svg>
-      <span class="craft-reply-label">Craft Reply</span>
+      <span class="craft-reply-label">Reply</span>
     `;
 
     // Tone selector dropdown
@@ -78,11 +81,11 @@ const UIInjector = {
   setLoading(btn, loading) {
     if (loading) {
       btn.classList.add('loading');
-      btn.querySelector('.craft-reply-label').textContent = 'Crafting...';
+      btn.querySelector('.craft-reply-label').textContent = 'Replying...';
       btn.disabled = true;
     } else {
       btn.classList.remove('loading');
-      btn.querySelector('.craft-reply-label').textContent = 'Craft Reply';
+      btn.querySelector('.craft-reply-label').textContent = 'Reply';
       btn.disabled = false;
     }
   },

@@ -4,6 +4,7 @@ const TweetParser = {
       text: this.getText(tweetElement),
       author: this.getAuthor(tweetElement),
       mediaAlt: this.getMediaAlt(tweetElement),
+      mediaUrls: this.getMediaUrls(tweetElement),
       quotedText: this.getQuotedText(tweetElement),
     };
   },
@@ -34,6 +35,17 @@ const TweetParser = {
       }
     });
     return alts.length > 0 ? alts.join('; ') : '';
+  },
+
+  getMediaUrls(el) {
+    const images = el.querySelectorAll('[data-testid="tweetPhoto"] img');
+    const urls = [];
+    images.forEach((img) => {
+      if (img.src) {
+        urls.push(img.src);
+      }
+    });
+    return urls;
   },
 
   getQuotedText(el) {

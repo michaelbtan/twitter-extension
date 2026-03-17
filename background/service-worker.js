@@ -23,7 +23,14 @@ const Storage = {
 };
 
 // ── AI API Clients ──
-async function callClaudeAPI(prompt, systemPrompt, settings) {
+async function callClaudeAPI(prompt, systemPrompt, settings, imageUrls = []) {
+  const content = imageUrls.length > 0
+    ? [
+        { type: 'text', text: prompt },
+        ...imageUrls.map((url) => ({ type: 'image', source: { type: 'url', url } })),
+      ]
+    : prompt;
+
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -36,7 +43,7 @@ async function callClaudeAPI(prompt, systemPrompt, settings) {
       model: settings.claudeModel,
       max_tokens: 1024,
       system: systemPrompt,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content }],
     }),
   });
 
@@ -49,7 +56,14 @@ async function callClaudeAPI(prompt, systemPrompt, settings) {
   return data.content[0].text.trim();
 }
 
-async function callOpenAIAPI(prompt, systemPrompt, settings) {
+async function callOpenAIAPI(prompt, systemPrompt, settings, imageUrls = []) {
+  const userContent = imageUrls.length > 0
+    ? [
+        { type: 'text', text: prompt },
+        ...imageUrls.map((url) => ({ type: 'image_url', image_url: { url } })),
+      ]
+    : prompt;
+
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -61,7 +75,7 @@ async function callOpenAIAPI(prompt, systemPrompt, settings) {
       max_tokens: 1024,
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt },
+        { role: 'user', content: userContent },
       ],
     }),
   });
@@ -75,11 +89,11 @@ async function callOpenAIAPI(prompt, systemPrompt, settings) {
   return data.choices[0].message.content.trim();
 }
 
-async function callAI(prompt, systemPrompt, settings) {
+async function callAI(prompt, systemPrompt, settings, imageUrls = []) {
   if (settings.apiProvider === 'openai') {
-    return callOpenAIAPI(prompt, systemPrompt, settings);
+    return callOpenAIAPI(prompt, systemPrompt, settings, imageUrls);
   }
-  return callClaudeAPI(prompt, systemPrompt, settings);
+  return callClaudeAPI(prompt, systemPrompt, settings, imageUrls);
 }
 
 // ── Prompt Builder ──
@@ -90,6 +104,9 @@ const TONE_INSTRUCTIONS = {
   informative: `You add valuable context, data, or a lesser-known perspective. Be the person who makes the thread smarter. Lead with the insight, not "Actually..." or "Fun fact:". Think knowledgeable colleague sharing over coffee. Avoid lecturing or condescension.`,
   provocative: `You challenge assumptions and spark discussion with bold takes. Be edgy but thoughtful — provoke thinking, not anger. Push boundaries without crossing into meanness. Think intellectual provocateur. Avoid trolling or rage-bait.`,
   analytical: `You break down the topic with structured thinking. Identify patterns, implications, or overlooked angles. Be precise but not dry. Think strategic consultant in 280 characters. Avoid jargon or unnecessary complexity.`,
+  question: `Reply with a genuinely curious, thought-provoking question that pulls at an interesting thread in the tweet. The question should feel natural and make the author want to respond. Avoid rhetorical questions or ones with obvious answers.`,
+  agreeable: `Sincerely agree and build on the point. Add a concrete example, a stronger implication, or a personal angle that shows you genuinely get it. Sound like an ally who sharpens the argument, not a yes-man.`,
+  disagreeable: `Sincerely and respectfully disagree. Name the specific point you push back on and offer a cleaner counter-argument or overlooked tradeoff. Be direct and honest, not hostile.`,
 };
 
 function buildPrompt(tweetContext, tone, researchContext, userContext) {
@@ -125,6 +142,10 @@ Tweet: "${tweetContext.text}"`;
     researchContext.forEach((item) => {
       userPrompt += `\n- ${item}`;
     });
+  }
+
+  if (tweetContext.mediaUrls && tweetContext.mediaUrls.length > 0) {
+    userPrompt += `\nThe post includes images (attached). Consider the visual content when crafting your reply.`;
   }
 
   if (userContext) {
@@ -226,7 +247,8 @@ async function handleCraftReply(message) {
     message.userContext
   );
 
-  const raw = await callAI(userPrompt, systemPrompt, settings);
+  const imageUrls = message.tweetContext.mediaUrls || [];
+  const raw = await callAI(userPrompt, systemPrompt, settings, imageUrls);
 
   let replies;
   try {
